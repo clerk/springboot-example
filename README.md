@@ -24,3 +24,7 @@ await fetch("http://localhost:8080/clerk_jwt", {
        }
    });
 ```
+
+## Important Note:
+This project is not optimized for production and do not address all best practices that should be configured in a production app (401 error handling and HTTPs for example).
+These projects serve as a design template and should be given appropriate consideration before being used in production.

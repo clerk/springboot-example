@@ -6,10 +6,10 @@ import com.clerk.backend_api.helpers.jwks.RequestState;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.net.URI;
-import java.net.http.HttpRequest;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -31,14 +31,15 @@ public class JwtRequestAuthenticationFilter extends OncePerRequestFilter {
 
         try {
 
-            // Cast spring request to Java HttpRequest to make it compatible with Clerk SDK
-            HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(new URI(request.getRequestURL().toString()))
-                .header("Authorization", request.getHeader("Authorization"))
-                .build();
+            Map<String, List<String>> headers = new HashMap<>();
+            request.getHeaderNames().asIterator().forEachRemaining(headerName -> {
+                List<String> headerValues = new ArrayList<>();
+                request.getHeaders(headerName).asIterator().forEachRemaining(headerValues::add);
+                headers.put(headerName, headerValues);
+            });
 
             // authenticate with clerk API
-            RequestState state = AuthenticateRequest.authenticateRequest(httpRequest,
+            RequestState state = AuthenticateRequest.authenticateRequest(headers,
                 AuthenticateRequestOptions.Builder.withSecretKey(clerkApiSecretKey).authorizedParties(clerkApiAuthorizedParties).build()
             );
 

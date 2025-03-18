@@ -6,6 +6,7 @@ import com.clerk.backend_api.helpers.jwks.RequestState;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,7 +28,8 @@ public class JwtRequestAuthenticationFilter extends OncePerRequestFilter {
     private List<String> clerkApiAuthorizedParties;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+        throws IOException {
 
         try {
 
@@ -43,10 +45,13 @@ public class JwtRequestAuthenticationFilter extends OncePerRequestFilter {
                 AuthenticateRequestOptions.Builder.withSecretKey(clerkApiSecretKey).authorizedParties(clerkApiAuthorizedParties).build()
             );
 
-            // If there is any auth error returned by clerk, return a 401, if required we can also cast the error
-            // to either AuthErrorReason or TokenVerificationErrorReason to get more details about the error
-            if (state.reason().isPresent()){
+
+            if (!state.isSignedIn()){
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.addHeader("Content-Type", "application/json");
+                response.getWriter().write("{\"detail\": \"" + state.reason().get().message() + "\"}");
+
+
             } else {
                 String userId = (String) state.claims().get().get("sub");
 
@@ -62,6 +67,8 @@ public class JwtRequestAuthenticationFilter extends OncePerRequestFilter {
 
         } catch (Exception e) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.addHeader("Content-Type", "application/json");
+            response.getWriter().write("{\"detail\": \"Unable to authenticate request\"}");
         }
 
     }

@@ -1,30 +1,91 @@
-### Spring boot reference app with Clerk API Authentication
+# Spring boot Clerk auth example
 
-This is a reference app that demonstrates how to use Clerk API to authenticate users in a Spring Boot application.
+A demonstration of using Clerk JWT authentication with Spring boot. This example shows how to integrate Clerk's user authentication with a Spring boot backend API.
 
-To run this application, follow the steps:
+## Configuration
 
-1. Ensure `CLERK_API_SECRET_KEY` environment variable is set with correct secret key.
+Set the required environment variables:
 
-2. Run following commands from terminal:
 ```bash
-   mvn clean install
-   mvn spring-boot:run
-   ```
+$ export CLERK_API_SECRET_KEY=your_secret_key
 
-3. From a Clerk frontend, use the useSession hook to retrieve the getToken() function:
-```
-const { getToken } = useSession();
-```
-4. Then send a request to backend server:
-```
-await fetch("http://localhost:8080/clerk_jwt", {
-       headers: {
-          "Authorization": `Bearer ${token}`
-       }
-   });
+# Set authorized parties (comma-separated list of allowed origins)
+$ export CLERK_AUTHORIZED_PARTIES=http://localhost:5173
 ```
 
-## Important Note:
-This project is not optimized for production and do not address all best practices that should be configured in a production app (401 error handling and HTTPs for example).
-These projects serve as a design template and should be given appropriate consideration before being used in production.
+
+## Installation
+
+```commandline
+mvn clean install
+ ```
+
+## Running
+
+```commandline
+mvn spring-boot:run
+```
+
+The server will be running at `http://localhost:8080`.
+
+## Frontend Integration
+
+From a Clerk React frontend:
+
+```javascript
+import { useAuth } from '@clerk/clerk-react';
+
+function ApiExample() {
+  const { getToken } = useAuth();
+  
+  const fetchData = async () => {
+    if (getToken) {
+      // Get the userId or null if the token is invalid
+      let res = await fetch("http://localhost:8080/clerk_jwt", {
+          headers: {
+              "Authorization": `Bearer ${await getToken()}`
+          }
+      });
+      console.log(await res.json()); // {userId: 'the_user_id_or_null'}
+
+      // Get gated data or a 401 Unauthorized if the token is not valid
+      res = await fetch("http://localhost:8080/gated_data", {
+          headers: {
+              "Authorization": `Bearer ${await getToken()}`
+          }
+      });
+      if (res.ok) {
+          console.log(await res.json()); // {foo: "bar"}
+      } else {
+          // Token was invalid
+      }
+    }
+  };
+  
+  return <button onClick={fetchData}>Fetch Data</button>;
+}
+```
+
+## API Reference
+
+Available endpoints:
+
+- `GET /clerk_jwt` - Returns the authenticated user ID
+- `GET /gated_data` - Returns protected data (requires authentication)
+
+
+## ⚠️ Production Warning
+
+This project is not optimized for production and does not address all best practices that should be configured in a production app. It serves as a design template and should be given appropriate consideration before being used in production.
+
+Issues to address for production use:
+- CORS configuration is specific to development environments
+- No HTTPS enforcement
+- Minimal error handling (especially 401 errors)
+- Using development server settings
+
+For production deployment:
+1. Configure proper CORS settings for your specific domains
+2. Enforce HTTPS for all API communication
+3. Implement comprehensive error handling
+4. Use a production-grade web server instead of the built-in development server

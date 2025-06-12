@@ -1,8 +1,9 @@
 package com.clerk.springbootexample.filter;
 
-import com.clerk.backend_api.helpers.jwks.AuthenticateRequest;
-import com.clerk.backend_api.helpers.jwks.AuthenticateRequestOptions;
-import com.clerk.backend_api.helpers.jwks.RequestState;
+import com.clerk.backend_api.helpers.security.AuthenticateRequest;
+import com.clerk.backend_api.helpers.security.models.AuthenticateRequestOptions;
+import com.clerk.backend_api.helpers.security.models.MachineAuthVerificationData;
+import com.clerk.backend_api.helpers.security.models.RequestState;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -19,7 +20,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
-public class JwtRequestAuthenticationFilter extends OncePerRequestFilter {
+public class RequestAuthenticationFilter extends OncePerRequestFilter {
 
     @Value("${clerk.api.secret-key}")
     private String clerkApiSecretKey;
@@ -53,7 +54,17 @@ public class JwtRequestAuthenticationFilter extends OncePerRequestFilter {
 
 
             } else {
-                String userId = (String) state.claims().get().get("sub");
+                String userId;
+                if (state.claims().isPresent()){
+                    userId = (String) state.claims().get().get("user_id");
+                }
+                else if (state.tokenVerificationResponse().isPresent()){
+                    userId =
+                        ((MachineAuthVerificationData) state.tokenVerificationResponse().get().payload()).getSubject();
+                }
+                else {
+                    throw new Exception("unable to authenticate request, no user_id found in claims or token verification response");
+                }
 
                 /*
                 set user as authenticated principal, this can then be used in the controller to identify the user

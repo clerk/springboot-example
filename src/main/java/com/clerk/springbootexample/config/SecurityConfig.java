@@ -1,6 +1,6 @@
 package com.clerk.springbootexample.config;
 
-import com.clerk.springbootexample.filter.JwtRequestAuthenticationFilter;
+import com.clerk.springbootexample.filter.RequestAuthenticationFilter;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -18,13 +18,13 @@ import org.springframework.web.filter.CorsFilter;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    private final JwtRequestAuthenticationFilter jwtRequestAuthenticationFilter;
+    private final RequestAuthenticationFilter requestAuthenticationFilter;
 
     @Value("${app.allowed-origins}")
     private List<String> allowedOrigins;
 
-    public SecurityConfig(JwtRequestAuthenticationFilter jwtRequestAuthenticationFilter) {
-        this.jwtRequestAuthenticationFilter = jwtRequestAuthenticationFilter;
+    public SecurityConfig(RequestAuthenticationFilter requestAuthenticationFilter) {
+        this.requestAuthenticationFilter = requestAuthenticationFilter;
     }
 
     @Bean
@@ -38,7 +38,7 @@ public class SecurityConfig {
             .csrf(Customizer.withDefaults());
 
         httpSecurity
-            .addFilterBefore(jwtRequestAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(requestAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return httpSecurity.build();
     }
 

@@ -56,14 +56,14 @@ public class RequestAuthenticationFilter extends OncePerRequestFilter {
             } else {
                 String userId;
                 if (state.claims().isPresent()){
-                    userId = (String) state.claims().get().get("user_id");
+                    userId = state.claims().get().getSubject();
                 }
                 else if (state.tokenVerificationResponse().isPresent()){
                     userId =
                         ((MachineAuthVerificationData) state.tokenVerificationResponse().get().payload()).getSubject();
                 }
                 else {
-                    throw new Exception("unable to authenticate request, no user_id found in claims or token verification response");
+                    throw new Exception("unable to authenticate request, no user ID found in claims or token verification response");
                 }
 
                 /*
